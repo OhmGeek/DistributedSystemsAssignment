@@ -18,8 +18,8 @@ class OrderManager(object):
         history = self.orders[userid]
         index = -1
         for order in history:
+            index += 1
             if order is not None:
-                index += 1
                 output += "ID: " + str(index) + "      items: " + str(order)
                 output += "\n\n"
         return output
