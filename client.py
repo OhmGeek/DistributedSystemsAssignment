@@ -1,8 +1,18 @@
+import random
+import string
+
 
 class Client(object):
     """ This is the Client Controller, allowing possible actions to be executed """
     def __init__(self):
-        pass
+        self.userid = self.__gen_user_id()
+
+    def __gen_user_id(self):
+        my_ID = ""
+        for i in range(1, 20):
+            my_ID += random.choice(string.ascii_uppercase)
+        return my_ID
+
     def print_options(self):
         """ Print the options of the client program """
         print("\n\nBeagle's Shop")
@@ -30,7 +40,7 @@ class Client(object):
                 finished = True
 
         # todo add order
-        print(items_to_order)
+
 
 def control_manager(program, opt):
     """ Manages flow of control based on the option input """
