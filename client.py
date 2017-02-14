@@ -1,13 +1,14 @@
 import random
 import string
 
-
+# TODO: generate userid on server, as this is something we want to ensure is unique.
 class Client(object):
     """ This is the Client Controller, allowing possible actions to be executed """
     def __init__(self):
         self.userid = self.__gen_user_id()
 
     def __gen_user_id(self):
+        """ Generate user ID """
         my_ID = ""
         for i in range(1, 20):
             my_ID += random.choice(string.ascii_uppercase)
