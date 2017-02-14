@@ -5,15 +5,39 @@ class Client(object):
         pass
     def print_options(self):
         """ Print the options of the client program """
-        print("TODO PRINT OPTIONS")
-    def option(self):
-        """ This is an example option """
-        pass
+        print("\n\nBeagle's Shop")
+        print("-----------------------")
+        print("Options:")
+        print("     1  -   Create Order")
 
-def control_manager(program, option):
+    def create_order(self):
+        """ Allows the user to create an order """
+        print("Insert items to order. Max 3 items per order.")
+        print("Press the enter key to finish.")
+        finished = False
+        item_num = 0
+        items_to_order = []
+        while not finished:
+            item_num += 1
+            item = input("Item " + str(item_num) + " ")
+            if item == "":
+                finished = True
+            else:
+                items_to_order.append(item)
+
+            # now check for finish
+            if item_num >= 3:
+                finished = True
+
+        # todo add order
+        print(items_to_order)
+
+def control_manager(program, opt):
     """ Manages flow of control based on the option input """
-    if option == "1":
-        prog.option()
+    if opt == "1":
+        program.create_order()
+    elif opt == "q":
+        print("Bye!")
     else:
         print("Invalid option. Try again")
 
@@ -28,4 +52,4 @@ if __name__ == "__main__":
         # listen for the exit command
         if option == "q":
             exit_status = True
-    
+
