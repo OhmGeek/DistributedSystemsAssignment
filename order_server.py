@@ -52,13 +52,24 @@ class OrderManager(object):
         self.orders[userid][orderid] = None
         return True
 
-if __name__ == "__main__":
-    man = OrderManager()
-    items_to_add = ["Item1", "Item2", "Item3"]
-    man.place_order("gcdk35", items_to_add)
-    new_items = ["second", "third", "fourth"]
-    man.place_order("gcdk35", new_items)
 
-    print(man.get_order_history("gcdk35"))
-    man.cancel_order("gcdk35", 0)
-    print(man.get_order_history("gcdk35"))
+daemon = Pyro4.Daemon()
+ns = Pyro4.locateNS()
+
+url = daemon.register(OrderManager)
+ns.register("OrderManager", url)
+daemon.requestLoop()
+
+
+
+## Testing
+# if __name__ == "__main__":
+#     man = OrderManager()
+#     items_to_add = ["Item1", "Item2", "Item3"]
+#     man.place_order("gcdk35", items_to_add)
+#     new_items = ["second", "third", "fourth"]
+#     man.place_order("gcdk35", new_items)
+#
+#     print(man.get_order_history("gcdk35"))
+#     man.cancel_order("gcdk35", 0)
+#     print(man.get_order_history("gcdk35"))

@@ -2,21 +2,30 @@
 """ User Client """
 import random
 import string
+import Pyro4
+
 
 # TODO: generate userid on server, as this is something we want to ensure is unique.
 class Client(object):
     """ This is the Client Controller, allowing possible actions to be executed """
+
     def __init__(self):
         self.userid = self.__gen_user_id()
+        # now connect to the server
+        ns = Pyro4.locateNS()
+        server_uri = ns.lookup("OrderManager")
+        self.manager_server = Pyro4.Proxy(server_uri)
 
-    def __gen_user_id(self):
+    @staticmethod
+    def __gen_user_id():
         """ Generate user ID """
         my_ID = ""
         for i in range(1, 20):
             my_ID += random.choice(string.ascii_uppercase)
         return my_ID
 
-    def print_options(self):
+    @staticmethod
+    def print_options():
         """ Print the options of the client program """
         print("\n\nBeagle's Shop")
         print("-----------------------")
@@ -42,7 +51,7 @@ class Client(object):
             if item_num >= 3:
                 finished = True
 
-        # todo add order
+        self.manager_server.place_order(self.userid, items_to_order)
 
 
 def control_manager(program, opt):
@@ -53,6 +62,7 @@ def control_manager(program, opt):
         print("Bye!")
     else:
         print("Invalid option. Try again")
+
 
 if __name__ == "__main__":
     exit_status = False
@@ -65,4 +75,3 @@ if __name__ == "__main__":
         # listen for the exit command
         if option == "q":
             exit_status = True
-
