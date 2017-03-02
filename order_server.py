@@ -1,12 +1,12 @@
 #!/usr/bin/python3
-""" This is the order server for managing orders """
-
+""" This is the order server for managing orders. We use Pyro4 to allow remote execution """
 import Pyro4
+
 
 # todo: refactor orders to be a custom data structure wrapper (so we can decrease coupling)
 @Pyro4.expose
 class OrderManager(object):
-    """ This is a manager to deal with orders via Pyro """
+    """ This is a manager to deal with orders"""
     def __init__(self):
         # create a list of orders
         self.orders = {}
@@ -28,7 +28,7 @@ class OrderManager(object):
     def place_order(self, userid, item_list):
         """ Place an order """
         if len(item_list) > 3 or len(item_list) <= 0:
-            print("Error, most contain at most 3 items")
+            print("Error, must contain at most 3 items")
         if userid not in self.orders:
             self.__create_user(userid)
 
@@ -53,6 +53,7 @@ class OrderManager(object):
         return True
 
 
+
 daemon = Pyro4.Daemon()
 ns = Pyro4.locateNS()
 
@@ -60,16 +61,3 @@ url = daemon.register(OrderManager)
 ns.register("OrderManager", url)
 daemon.requestLoop()
 
-
-
-## Testing
-# if __name__ == "__main__":
-#     man = OrderManager()
-#     items_to_add = ["Item1", "Item2", "Item3"]
-#     man.place_order("gcdk35", items_to_add)
-#     new_items = ["second", "third", "fourth"]
-#     man.place_order("gcdk35", new_items)
-#
-#     print(man.get_order_history("gcdk35"))
-#     man.cancel_order("gcdk35", 0)
-#     print(man.get_order_history("gcdk35"))
