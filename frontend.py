@@ -1,81 +1,82 @@
 #!/usr/bin/python3
 """ User Client """
+import json
 import random
+import socketserver
 import string
 import Pyro4
 
+# TODO: test whether batch works
+# TODO: refactor
+import sys
 
-# TODO: generate userid on server, as this is something we want to ensure is unique.
+
 class FrontEnd(object):
-    """ This is the Client Controller, allowing possible actions to be executed """
-
-    def __init__(self, is_primary):
-        self.userid = self.__gen_user_id()
-        # now connect to the server
+    def __init__(self):
         ns = Pyro4.locateNS()
         server_uri = ns.lookup("OrderManager")
-        self.manager_server = Pyro4.Proxy(server_uri)
+        self.server = Pyro4.Proxy(server_uri)
 
-    @staticmethod
-    def __gen_user_id():
-        """ Generate user ID """
-        my_ID = ""
-        for i in range(1, 20):
-            my_ID += random.choice(string.ascii_uppercase)
-        return my_ID
+    def process_command(self, data):
+        print("Frontend data: ", data)
+        command = data['action']
+        userid = data['userid']
+        input = data['data']
+        if not userid:
+            return "No USERID specified"
 
-    @staticmethod
-    def print_options():
-        """ Print the options of the client program """
-        print("\n\nBeagle's Shop")
-        print("-----------------------")
-        print("Options:")
-        print("     1  -   Create Order")
+        if command == "ADD":
+            print("Running Action Frontend")
+            items_to_order = input.split(',')
+            if len(items_to_order) > 3 or len(items_to_order) == 0:
+                return "Must enter at least 1 item, and no more than 3."
+            # deal with batch stuff, to
+            results = self.server.place_order(userid, items_to_order)
 
-    def create_order(self):
-        """ Allows the user to create an order """
-        print("Insert items to order. Max 3 items per order.")
-        print("Press the enter key to finish.")
-        finished = False
-        item_num = 0
-        items_to_order = []
-        while not finished:
-            item_num += 1
-            item = input("Item " + str(item_num) + " ")
-            if item == "":
-                finished = True
-            else:
-                items_to_order.append(item)
+            # todo check length to make sure a server is online.
+            return str(results)
 
-            # now check for finish
-            if item_num >= 3:
-                finished = True
+        elif command == "DELETE":
+            print("running delete front end")
+            del_index = input
+            results = self.server.cancel_order(userid, del_index)
 
-        self.manager_server.place_order(self.userid, items_to_order)
+            # todo check results to ensure things are fine :D
+            return str(results)
 
+        elif command == "HISTORY":
+            print("Running History frontend")
+            results = self.server.get_order_history(userid)
+            print("Frontend results: ", results)
+            # todo remove batch processing for this (no CUD needed, only R).
+            return str(results)
 
-def control_manager(program, opt):
-    """ Manages flow of control based on the option input """
-    if opt == "1":
-        program.create_order()
-    elif opt == "q":
-        print("Bye!")
-    else:
-        print("Invalid option. Try again")
+        else:
+            return "Command not found. Please try again"
 
 
-def main():
-    exit_status = False
-    prog = FrontEnd()
-    while not exit_status:
-        prog.print_options()
-        option = input("Select option: ")
-        control_manager(prog, option)
+class MyServer(socketserver.BaseRequestHandler):
+    def handle(self):
+        server = FrontEnd()
+        data = self.request.recv(1024).strip()
+        data = data.decode()
 
-        # listen for the exit command
-        if option == "q":
-            exit_status = True
+        data_dict = json.loads(data)
+        res = server.process_command(data_dict)
+        # server log now
+        print("Frontend: ", res)
+        response = res.encode()
+        print("Frontend encoded: ", response)
+        self.request.sendall(response)
+
+
+def main(host, port):
+    server = socketserver.TCPServer((host, port), MyServer)
+    server.serve_forever()
 
 
 if __name__ == "__main__":
-    main()
+    print("Arguments frontend: ", sys.argv)
+    hostname = sys.argv[1]
+    portnum = int(sys.argv[2])
+    main(hostname, portnum)

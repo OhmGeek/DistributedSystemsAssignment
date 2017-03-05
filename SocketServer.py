@@ -8,7 +8,17 @@
 """
 
 from transmission_state import TransmissionState
-import socket
+import socketserver
+from frontend import FrontEnd
+
+
+class SocketPrinter(socketserver.StreamRequestHandler):
+    def __init__(self):
+        self.frontend = FrontEnd(self.io)
+
+    def handle(self):
+        # READ the state and ignore
+        pass
 
 
 def main():

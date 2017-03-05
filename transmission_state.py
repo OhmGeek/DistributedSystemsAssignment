@@ -17,5 +17,4 @@ class TransmissionState(Enum):
     INPUT = 1
     DISPLAY = 2
     EXIT = 3
-
-
+    INIT = 4

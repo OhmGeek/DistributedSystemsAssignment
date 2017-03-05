@@ -7,9 +7,7 @@ import Pyro4
 @Pyro4.expose
 class OrderManager(object):
     """ This is a manager to deal with orders"""
-    def __init__(self):
-        # create a list of orders
-        self.orders = {}
+    orders = {}
 
     def __create_user(self, userid):
         self.orders[userid] = []
@@ -23,6 +21,8 @@ class OrderManager(object):
             if order is not None:
                 output += "ID: " + str(index) + "      items: " + str(order)
                 output += "\n\n"
+            else:
+                output = "Order does not exist :("
         return output
 
     def place_order(self, userid, item_list):
@@ -39,7 +39,7 @@ class OrderManager(object):
     def get_order_history(self, userid):
         """ Get a user's order history """
         if userid not in self.orders:
-            print("User not found")
+            return "User not found"
         # otherwise, format the order history and return it.
         formatted_history = self.__format_order_hist(userid)
         return formatted_history
@@ -47,11 +47,9 @@ class OrderManager(object):
     def cancel_order(self, userid, orderid):
         """ Cancel a user's order """
         if userid not in self.orders:
-            print("User not found")
-            return False
+            return "User not found"
         self.orders[userid][orderid] = None
-        return True
-
+        return "Deleted"
 
 
 daemon = Pyro4.Daemon()
@@ -60,4 +58,3 @@ ns = Pyro4.locateNS()
 url = daemon.register(OrderManager)
 ns.register("OrderManager", url)
 daemon.requestLoop()
-
