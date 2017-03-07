@@ -1,0 +1,43 @@
+\documentclass[12pt,fleqn,leqno,letterpaper]{article}
+
+\title{Distributed Systems Assignment}
+\author{Ryan Collins\\
+  \small{Username - gcdk35}\\
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Question 1}
+\subsection*{Part A}
+When communicating with a system employing passive replication, the following timeline is followed:
+
+\paragraph{Request sent from client to front-end}
+When the request is received by the front-end, if the request has previously been received, it's merely ignored, with the previous response being echoed (as the state has already been changed). Otherwise, this request is sent to the primary server.
+
+\paragraph{If: the primary server isn't available}
+In the event no response is received from the primary server after a given time, we assume the server to be offline. Therefore, we remove that server from being the primary and set one of the backup servers as the primary server.
+
+\paragraph{Otherwise: Request processed by primary server}
+The request is processed, and depending on the action, this is carried out. If there has been a change in state of the primary server (i.e. data has been created, updated or deleted), then this state is propagated through to both backup servers. If we are just retrieving information, there is no need to waste resources on updating a state that hasn't changed.
+
+\subsection*{Part B}
+TODO Write this!!!!!
+
+
+
+\section*{Question 2}
+The code and working system is provided in the project. Just run the respective files to test the system.
+
+\section*{Question 3}
+\subsection*{Part A}
+When the primary server fails, it should be removed from the pool of working servers, and one of the backup servers should take over. If the server begins working again, then it should be able to be added back into the pool of servers as a backup server. 
+
+\subsection*{Part B}
+Modifications made to implement this here...
+
+
+Then add comments to the code to highlight this modification/attach a new set of programs here.
+\end{document}

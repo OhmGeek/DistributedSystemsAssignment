@@ -17,3 +17,12 @@ To run the client side, simply call
 You might need to ensure that the file is executable.
 
 Otherwise, just run it directly with Python.
+
+## Running the app once:
+For your convenience, I've written a simple BASH script that runs the program. Just call:
+
+```bash
+./run.sh 
+```
+
+This will start the nameserver, then run the order server, then the frontend, and then create an interactive client.

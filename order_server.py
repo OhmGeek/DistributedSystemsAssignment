@@ -2,12 +2,29 @@
 """ This is the order server for managing orders. We use Pyro4 to allow remote execution """
 import Pyro4
 
-
-# todo: refactor orders to be a custom data structure wrapper (so we can decrease coupling)
 @Pyro4.expose
 class OrderManager(object):
     """ This is a manager to deal with orders"""
     orders = {}
+    servers = []
+
+    def __init__(self):
+        self.is_primary = True
+
+    def set_state(self, state):
+        self.orders = state
+
+    def __update_backup_servers(self):
+        if not self.is_primary:
+            return False  # if we are not the primary server
+        for s in self.servers:
+            s.set_state(self.orders)
+        return True
+    def set_primary_state(self, is_primary):
+        self.is_primary = is_primary
+
+    def set_servers(self, servers):
+        self.servers = servers
 
     def __create_user(self, userid):
         self.orders[userid] = []
@@ -20,7 +37,7 @@ class OrderManager(object):
             index += 1
             if order is not None:
                 output += "ID: " + str(index) + "      items: " + str(order)
-                output += "\n\n"
+                output += "\n"
             else:
                 output = "Order does not exist :("
         return output
@@ -33,6 +50,7 @@ class OrderManager(object):
             self.__create_user(userid)
 
         self.orders[userid].append(item_list)
+        self.__update_backup_servers()
         # get the index of the last element in the list
         return len(self.orders[userid]) - 1
 
@@ -49,12 +67,16 @@ class OrderManager(object):
         if userid not in self.orders:
             return "User not found"
         self.orders[userid][orderid] = None
+        self.__update_backup_servers()  # we need to update the backups through the primary server.
         return "Deleted"
 
 
-daemon = Pyro4.Daemon()
-ns = Pyro4.locateNS()
+def main(counter):
+    daemon = Pyro4.Daemon()
+    ns = Pyro4.locateNS()
 
-url = daemon.register(OrderManager)
-ns.register("OrderManager", url)
-daemon.requestLoop()
+    url = daemon.register(OrderManager())
+
+    ns.register("OrderManager" + str(counter), url)
+
+    daemon.requestLoop()

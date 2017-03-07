@@ -1,21 +1,29 @@
 #!/usr/bin/python3
 """ User Client """
 import json
-import random
 import socketserver
-import string
+import sys
+import threading
+
 import Pyro4
 
-# TODO: test whether batch works
-# TODO: refactor
-import sys
+import order_server
 
 
 class FrontEnd(object):
     def __init__(self):
         ns = Pyro4.locateNS()
-        server_uri = ns.lookup("OrderManager")
-        self.server = Pyro4.Proxy(server_uri)
+        server_uris = [ns.lookup("OrderManager1"), ns.lookup("OrderManager2"), ns.lookup("OrderManager3")]
+        self.serverlist = []
+        for uri in server_uris:
+            self.serverlist.append(Pyro4.Proxy(uri))
+
+        self.server = self.serverlist[0]
+        self.server.set_primary_state(True)
+        # update server lists
+        for s in self.serverlist:
+            s.set_servers(self.server)
+        print(server_uris)
 
     def process_command(self, data):
         print("Frontend data: ", data)
@@ -71,6 +79,10 @@ class MyServer(socketserver.BaseRequestHandler):
 
 
 def main(host, port):
+    for i in range(1,4):
+        t = threading.Thread(target=order_server.main, args=[i])
+        t.daemon = True
+        t.start()
     server = socketserver.TCPServer((host, port), MyServer)
     server.serve_forever()
 
