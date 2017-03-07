@@ -9,23 +9,24 @@ import Pyro4
 
 import order_server
 
+
 # TODO: work out what is throwing errors
 # TODO: get server polling code to change server status if there is an outage.
 
 class FrontEnd(object):
     def __init__(self):
         ns = Pyro4.locateNS()
-        server_uris = [ns.lookup("OrderManager1"), ns.lookup("OrderManager2"), ns.lookup("OrderManager3")]
+        self.server_uris = [ns.lookup("OrderManager1"), ns.lookup("OrderManager2"), ns.lookup("OrderManager3")]
         self.serverlist = []
-        for uri in server_uris:
+        for uri in self.server_uris:
             self.serverlist.append(Pyro4.Proxy(uri))
 
         self.server = self.serverlist[0]
         self.server.set_primary_state(True)
         # update server lists
         for s in self.serverlist:
-            s.set_servers(self.server)
-        print(server_uris)
+            s.set_servers(self.server_uris)
+        print(self.server_uris)
 
     def process_command(self, data):
         print("Frontend data: ", data)
@@ -81,10 +82,10 @@ class MyServer(socketserver.BaseRequestHandler):
 
 
 def main(host, port):
-    for i in range(1,4):
-        t = threading.Thread(target=order_server.main, args=[i])
-        t.daemon = True
-        t.start()
+    # for i in range(1, 4):
+    #     t = threading.Thread(target=order_server.main, args=[i])
+    #     t.daemon = True
+    #     t.start()
     server = socketserver.TCPServer((host, port), MyServer)
     server.serve_forever()
 

@@ -2,8 +2,11 @@
 """ This is the order server for managing orders. We use Pyro4 to allow remote execution """
 import Pyro4
 
+
 # TODO: work out what is throwing the errors
 # TODO: test backup server propagation properly (by running lots of terminals)
+import sys
+
 
 @Pyro4.expose
 class OrderManager(object):
@@ -15,21 +18,26 @@ class OrderManager(object):
         self.is_primary = True
 
     def set_state(self, state):
+        print("My state has been set to: ", str(state))
         self.orders = state
 
     def __update_backup_servers(self):
         if not self.is_primary:
+            print("Not the primary server so won't propagate")
             return False  # if we are not the primary server
 
         for s in self.servers:
             s.set_state(self.orders)
+            print("Set state of remote server")
         return True
 
     def set_primary_state(self, is_primary):
         self.is_primary = is_primary
 
     def set_servers(self, servers):
-        self.servers = servers
+        self.servers = []
+        for uri in servers:
+            self.servers.append(Pyro4.Proxy(uri))
 
     def __create_user(self, userid):
         self.orders[userid] = []
@@ -68,6 +76,7 @@ class OrderManager(object):
         return formatted_history
 
     def cancel_order(self, userid, orderid):
+        orderid = int(orderid)  # convert string to integer
         """ Cancel a user's order """
         if userid not in self.orders:
             return "User not found"
@@ -85,3 +94,7 @@ def main(counter):
     ns.register("OrderManager" + str(counter), url)
 
     daemon.requestLoop()
+
+if __name__ == "__main__":
+    counter_val = sys.argv[1]
+    main(counter_val)
