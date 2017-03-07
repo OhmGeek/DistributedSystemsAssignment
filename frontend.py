@@ -9,6 +9,8 @@ import Pyro4
 
 import order_server
 
+# TODO: work out what is throwing errors
+# TODO: get server polling code to change server status if there is an outage.
 
 class FrontEnd(object):
     def __init__(self):

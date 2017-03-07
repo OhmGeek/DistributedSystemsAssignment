@@ -2,6 +2,9 @@
 """ This is the order server for managing orders. We use Pyro4 to allow remote execution """
 import Pyro4
 
+# TODO: work out what is throwing the errors
+# TODO: test backup server propagation properly (by running lots of terminals)
+
 @Pyro4.expose
 class OrderManager(object):
     """ This is a manager to deal with orders"""
@@ -17,9 +20,11 @@ class OrderManager(object):
     def __update_backup_servers(self):
         if not self.is_primary:
             return False  # if we are not the primary server
+
         for s in self.servers:
             s.set_state(self.orders)
         return True
+
     def set_primary_state(self, is_primary):
         self.is_primary = is_primary
 
