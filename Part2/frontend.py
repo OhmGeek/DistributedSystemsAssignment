@@ -7,26 +7,45 @@ import threading
 
 import Pyro4
 
-import order_server
-
-
 # TODO: work out what is throwing errors
 # TODO: get server polling code to change server status if there is an outage.
+import order_server
+from Pyro4.errors import CommunicationError, PyroError
+
 
 class FrontEnd(object):
     def __init__(self):
         ns = Pyro4.locateNS()
         self.server_uris = [ns.lookup("OrderManager1"), ns.lookup("OrderManager2"), ns.lookup("OrderManager3")]
-        self.serverlist = []
+        serverlist = []
         for uri in self.server_uris:
-            self.serverlist.append(Pyro4.Proxy(uri))
+            serverlist.append(Pyro4.Proxy(uri))
 
-        self.server = self.serverlist[0]
-        self.server.set_primary_state(True)
         # update server lists
-        for s in self.serverlist:
-            s.set_servers(self.server_uris)
+        for s in serverlist:
+            try:
+                s.set_servers(self.server_uris)
+            except PyroError:
+                pass  # ignore the error
+
         print(self.server_uris)
+
+    def __get_order_server(self):
+        primary_server = True
+        for server in self.server_uris:
+            try:
+                actual_server = Pyro4.Proxy(server)
+                actual_server.set_primary_state(primary_server)
+                primary_server = False
+                return actual_server
+            except ConnectionRefusedError:
+                pass
+            except CommunicationError:
+                pass
+            except PyroError:
+                pass
+
+        return None  # todo throw No Remaining Servers exception
 
     def process_command(self, data):
         print("Frontend data: ", data)
@@ -42,7 +61,7 @@ class FrontEnd(object):
             if len(items_to_order) > 3 or len(items_to_order) == 0:
                 return "Must enter at least 1 item, and no more than 3."
             # deal with batch stuff, to
-            results = self.server.place_order(userid, items_to_order)
+            results = self.__get_order_server().place_order(userid, items_to_order)
 
             # todo check length to make sure a server is online.
             return str(results)
@@ -50,14 +69,14 @@ class FrontEnd(object):
         elif command == "DELETE":
             print("running delete front end")
             del_index = input
-            results = self.server.cancel_order(userid, del_index)
+            results = self.__get_order_server().cancel_order(userid, del_index)
 
             # todo check results to ensure things are fine :D
             return str(results)
 
         elif command == "HISTORY":
             print("Running History frontend")
-            results = self.server.get_order_history(userid)
+            results = self.__get_order_server().get_order_history(userid)
             print("Frontend results: ", results)
             # todo remove batch processing for this (no CUD needed, only R).
             return str(results)

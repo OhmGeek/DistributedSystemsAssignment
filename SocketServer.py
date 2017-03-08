@@ -7,9 +7,9 @@
     basic states.
 """
 
-from transmission_state import TransmissionState
 import socketserver
-from frontend import FrontEnd
+
+from Part1.frontend import FrontEnd
 
 
 class SocketPrinter(socketserver.StreamRequestHandler):
