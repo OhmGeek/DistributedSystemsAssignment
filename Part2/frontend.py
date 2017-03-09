@@ -7,19 +7,62 @@ import threading
 
 import Pyro4
 
-# TODO: work out what is throwing errors
-# TODO: get server polling code to change server status if there is an outage.
-import order_server
+# TODO: avoid reverting the first back to primary (add a queue of servers essentially).
+
 from Pyro4.errors import CommunicationError, PyroError
 
 
 class FrontEnd(object):
     def __init__(self):
+        self.__update_server_lists()
+
+    def __get_list_of_server_uris(self):
         ns = Pyro4.locateNS()
-        self.server_uris = [ns.lookup("OrderManager1"), ns.lookup("OrderManager2"), ns.lookup("OrderManager3")]
+        self.server_uris = []
+        ids = ["OrderManager1", "OrderManager2", "OrderManager3"]
+        for id in ids:
+            try:
+                uri = ns.lookup(id)
+                self.server_uris.append(uri)
+            except ConnectionRefusedError:
+                pass
+            except CommunicationError:
+                pass
+            except PyroError:
+                pass
+
+    def __get_order_server(self):
+        primary_server = True
+        actual_server = None
+        for server in self.server_uris:
+            try:
+                s = Pyro4.Proxy(server)
+                s.set_primary_state(primary_server)
+                primary_server = False
+                if actual_server is None and s.is_working():
+                    actual_server = s
+
+            except ConnectionRefusedError:
+                pass
+            except CommunicationError:
+                pass
+            except PyroError:
+                pass
+            except:
+                pass
+
+        print("Current Server: \n", str(actual_server))
+        return actual_server
+
+    def __update_server_lists(self):
+        self.__get_list_of_server_uris()
         serverlist = []
         for uri in self.server_uris:
-            serverlist.append(Pyro4.Proxy(uri))
+            try:
+                s = Pyro4.Proxy(uri)
+                serverlist.append(Pyro4.Proxy(uri))
+            except:
+                pass
 
         # update server lists
         for s in serverlist:
@@ -30,28 +73,12 @@ class FrontEnd(object):
 
         print(self.server_uris)
 
-    def __get_order_server(self):
-        primary_server = True
-        for server in self.server_uris:
-            try:
-                actual_server = Pyro4.Proxy(server)
-                actual_server.set_primary_state(primary_server)
-                primary_server = False
-                return actual_server
-            except ConnectionRefusedError:
-                pass
-            except CommunicationError:
-                pass
-            except PyroError:
-                pass
-
-        return None  # todo throw No Remaining Servers exception
-
     def process_command(self, data):
         print("Frontend data: ", data)
         command = data['action']
         userid = data['userid']
         input = data['data']
+        out_error = ""
         if not userid:
             return "No USERID specified"
 
@@ -82,7 +109,9 @@ class FrontEnd(object):
             return str(results)
 
         else:
-            return "Command not found. Please try again"
+            out_error = "Command not found. Please try again"
+        self.__update_server_lists()
+        return out_error
 
 
 class MyServer(socketserver.BaseRequestHandler):

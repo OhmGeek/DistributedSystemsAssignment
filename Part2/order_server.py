@@ -18,20 +18,25 @@ class OrderManager(object):
         self.is_primary = True
 
     def set_state(self, state):
-        print("My state has been set to: ", str(state))
-        self.orders = state
+        if not self.is_primary:
+            print("My state has been set to: ", str(state))
+            self.orders = state
+        else:
+            print("Primary server, so I can't have my state set.")
 
     def __update_backup_servers(self):
         if not self.is_primary:
             print("Not the primary server so won't propagate")
             return False  # if we are not the primary server
-
+        print("My current servers are:")
+        print(str(self.servers))
         for s in self.servers:
             s.set_state(self.orders)
             print("Set state of remote server")
         return True
 
     def set_primary_state(self, is_primary):
+        print("My state is set to ", str(is_primary))
         self.is_primary = is_primary
 
     def set_servers(self, servers):
@@ -46,16 +51,18 @@ class OrderManager(object):
         output = ""
         history = self.orders[userid]
         index = -1
+        if history is None or len(history) == 0:
+            return "No Order"
         for order in history:
             index += 1
             if order is not None:
                 output += "ID: " + str(index) + "      items: " + str(order)
                 output += "\n"
-            else:
-                output = "Order does not exist :("
         return output
 
     def place_order(self, userid, item_list):
+        # start by updating, then update afterwards
+        self.__update_backup_servers()
         """ Place an order """
         if len(item_list) > 3 or len(item_list) <= 0:
             print("Error, must contain at most 3 items")
@@ -84,6 +91,8 @@ class OrderManager(object):
         self.__update_backup_servers()  # we need to update the backups through the primary server.
         return "Deleted"
 
+    def is_working(self):
+        return True
 
 def main(counter):
     daemon = Pyro4.Daemon()
